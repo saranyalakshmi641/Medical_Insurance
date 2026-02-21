@@ -1,0 +1,16 @@
+ 
+ML/ 
+venv/ 
+env/ 
+Lib/ 
+Scripts/ 
+__pycache__/ 
+*.pyc 
+*.csv 
+*.xlsx 
+training/ 
+.env 
+backend/insurance_model.pkl
+
+__pycache__/
+*.pyc
