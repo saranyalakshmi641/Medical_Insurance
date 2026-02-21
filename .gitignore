@@ -10,7 +10,3 @@ __pycache__/
 *.xlsx 
 training/ 
 .env 
-backend/insurance_model.pkl
-
-__pycache__/
-*.pyc
