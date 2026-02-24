@@ -74,7 +74,8 @@ st.markdown("""
 st.markdown('<div class="main-title">🏥 Medical Insurance Cost Predictor</div>', unsafe_allow_html=True)
 st.markdown('<div class="subtitle">AI-Based Healthcare Expense Estimation System</div>', unsafe_allow_html=True)
 
-API_URL = "http://127.0.0.1:8000/predict"
+# ✅ IMPORTANT: Use deployed FastAPI URL (NOT localhost)
+API_URL = "https://medical-insurance-eelh.onrender.com/predict"
 
 # ---------------- INPUT FORM ---------------- #
 with st.container():
@@ -114,21 +115,29 @@ if st.button("🔍 Predict Medical Cost", use_container_width=True):
 
     try:
         with st.spinner("Analyzing medical profile..."):
-            response = requests.post(API_URL, json=input_data)
+            response = requests.post(API_URL, json=input_data, timeout=10)
+
+        # ✅ DEBUG INFO (helps if error)
+        st.write("Status Code:", response.status_code)
 
         if response.status_code == 200:
             result = response.json()
-            predicted_cost = result["predicted_annual_medical_cost"]
 
-            st.markdown(
-                f'<div class="prediction-box">💰 Predicted Annual Medical Cost: ₹ {predicted_cost:,.2f}</div>',
-                unsafe_allow_html=True
-            )
+            if "predicted_annual_medical_cost" in result:
+                predicted_cost = result["predicted_annual_medical_cost"]
+
+                st.markdown(
+                    f'<div class="prediction-box">💰 Predicted Annual Medical Cost: ₹ {predicted_cost:,.2f}</div>',
+                    unsafe_allow_html=True
+                )
+            else:
+                st.error(f"Unexpected response: {result}")
+
         else:
-            st.error("⚠ Unable to connect to prediction API.")
+            st.error(f"⚠ API Error: {response.text}")
 
     except Exception as e:
-        st.error(f"❌ Error: {e}")
+        st.error(f"❌ Connection Error: {e}")
 
 # ---------------- FOOTER ---------------- #
 st.markdown(
