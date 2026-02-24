@@ -1,17 +1,12 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 import pickle
 import pandas as pd
 import os
 
-# ---------------- APP INIT ----------------
-app = FastAPI(
-    title="Medical Insurance API",
-    docs_url="/docs",
-    redoc_url="/redoc"
-)
+app = FastAPI()
 
 # ---------------- CORS ----------------
 app.add_middleware(
@@ -26,7 +21,7 @@ app.add_middleware(
 with open("insurance_model.pkl", "rb") as f:
     model = pickle.load(f)
 
-# ---------------- INPUT SCHEMA ----------------
+# ---------------- INPUT ----------------
 class InsuranceInput(BaseModel):
     age: int
     sex: str
@@ -37,28 +32,29 @@ class InsuranceInput(BaseModel):
     claims_count: int
     annual_premium: float
 
-# ---------------- ROOT API ----------------
+# ---------------- API ROUTES ----------------
 @app.get("/api")
 def home():
-    return {"message": "API is running 🚀"}
+    return {"message": "API running 🚀"}
 
-# ---------------- PREDICTION API ----------------
 @app.post("/predict")
 def predict(data: InsuranceInput):
-    try:
-        input_df = pd.DataFrame([data.dict()])
-        prediction = model.predict(input_df)[0]
-        return {
-            "predicted_annual_medical_cost": float(prediction)
-        }
-    except Exception as e:
-        return {"error": str(e)}
+    input_df = pd.DataFrame([data.dict()])
+    prediction = model.predict(input_df)[0]
+    return {"predicted_cost": float(prediction)}
 
-# ---------------- SERVE FRONTEND ----------------
-# (Make sure your React build folder exists)
-if os.path.exists("frontend/build"):
-    app.mount(
-        "/",
-        StaticFiles(directory="frontend/build", html=True),
-        name="frontend"
-    )
+# ---------------- SERVE FRONTEND SAFELY ----------------
+FRONTEND_PATH = "frontend/build"
+
+@app.get("/")
+def serve_root():
+    return FileResponse(os.path.join(FRONTEND_PATH, "index.html"))
+
+@app.get("/{full_path:path}")
+def serve_react(full_path: str):
+    file_path = os.path.join(FRONTEND_PATH, full_path)
+
+    if os.path.exists(file_path):
+        return FileResponse(file_path)
+
+    return FileResponse(os.path.join(FRONTEND_PATH, "index.html"))
